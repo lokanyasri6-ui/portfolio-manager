@@ -21,14 +21,24 @@ def env_bool(name, default=False):
         return default
     return value.lower() in ("1", "true", "yes", "on")
 
-SECRET_KEY = require_env("SECRET_KEY")
-DEBUG = env_bool("DEBUG", True)
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
+IS_RENDER = os.environ.get("RENDER") == "true"
+SECRET_KEY = os.environ.get("SECRET_KEY") or "django-insecure-render-default-key-change-in-production"
+DEBUG = env_bool("DEBUG", False if IS_RENDER else True)
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost,.onrender.com").split(",") if h.strip()]
 
 SECURE_COOKIES = env_bool("SECURE_COOKIES", False)
 SESSION_COOKIE_SECURE = SECURE_COOKIES
 CSRF_COOKIE_SECURE = SECURE_COOKIES
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+
+render_external_url = os.environ.get("RENDER_EXTERNAL_URL")
+if render_external_url:
+    from urllib.parse import urlparse
+    render_host = urlparse(render_external_url).netloc
+    if render_host and render_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(render_host)
+    if render_external_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_external_url)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -41,13 +51,15 @@ INSTALLED_APPS = [
     "corsheaders",
     "accounts",
     "admin_panel",
+    "portfolio",
     "investments",
     "reports",
-    "portfolio",
+   
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -79,13 +91,27 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", True)
+cors_allowed = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if cors_allowed:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_allowed.split(",") if o.strip()]
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+if os.environ.get("DATABASE_URL"):
+    try:
+        import dj_database_url
+        DATABASES["default"] = dj_database_url.config(
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    except ImportError:
+        pass
 
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["accounts.backends.EmailOrUsernameBackend"]
@@ -134,7 +160,9 @@ USE_TZ = True
 
 # ---------------------------------------------------------------- static files
 STATIC_URL = "static/"
-STATICFILES_DIRS = [PROJECT_ROOT / "frontend" / "static"]
+frontend_static = PROJECT_ROOT / "frontend" / "static"
+STATICFILES_DIRS = [frontend_static] if frontend_static.exists() else []
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
