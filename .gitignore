@@ -43,11 +43,18 @@ backend/media/
 
 # Node & Frontend
 node_modules/
+frontend/node_modules/
 Frontend/portfolio-manager/node_modules/
 frontend-new/portfolio-manager/node_modules/
 dist/
+frontend/dist/
 Frontend/portfolio-manager/dist/
 frontend-new/portfolio-manager/dist/
+.vite/
+frontend/.vite/
+frontend/.env.local
+frontend/.env.*.local
+Frontend.zip
 .vite/
 Frontend.zip
 
