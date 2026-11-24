@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 
-export const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+export const BASE_URL = (import.meta.env.VITE_API_URL || 'https://portfolio-manager-1-39eg.onrender.com').replace(/\/+$/, '');
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 20000 });
 
