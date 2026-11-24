@@ -32,7 +32,7 @@ const typeOf = (r) => String(r.report_type || r.type || r.title || r.name || '')
 const createdOf = (r) => r.created_at || r.generated_at || r.date || r.created;
 const fileUrl = (r, ext) => {
   const u = [r.file, r.file_url, r.download_url, r.url, r[ext], r[`${ext}_url`]].find((x) => typeof x === 'string' && x.toLowerCase().split('?')[0].endsWith('.' + ext));
-  return u ? (u.startsWith('http') ? u : BASE_URL + u) : null;
+  return u ? (u.startsWith('http') ? u : `${BASE_URL}/${u.replace(/^\/+/, '')}`) : null;
 };
 
 export default function Reports() {

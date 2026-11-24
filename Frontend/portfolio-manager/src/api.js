@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 20000 });
 
