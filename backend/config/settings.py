@@ -116,15 +116,18 @@ DATABASES = {
     }
 }
 
-if os.environ.get("DATABASE_URL"):
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
     try:
         import dj_database_url
-        DATABASES["default"] = dj_database_url.config(
+        DATABASES["default"] = dj_database_url.parse(
+            database_url,
             conn_max_age=600,
             conn_health_checks=True,
         )
-    except ImportError:
-        pass
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to parse DATABASE_URL ({exc}), using SQLite default.")
 
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["accounts.backends.EmailOrUsernameBackend"]
@@ -151,9 +154,9 @@ CSRF_COOKIE_SECURE = env_bool("SECURE_COOKIES", False)
 # ---------------------------------------------------------------- REST framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-    "rest_framework_simplejwt.authentication.JWTAuthentication",
-    "rest_framework.authentication.SessionAuthentication",
-],
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -161,6 +164,7 @@ REST_FRAMEWORK = {
     ],
     "COERCE_DECIMAL_TO_STRING": False,           # numbers stay numbers in JSON (Chart.js friendly)
     "DEFAULT_THROTTLE_RATES": {"login": "20/min"},
+    "EXCEPTION_HANDLER": "config.views.custom_exception_handler",
 }
 
 
